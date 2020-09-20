@@ -1,0 +1,148 @@
+package pub.timelyrain.jenkins.plugin.increment;
+
+import hudson.EnvVars;
+import hudson.Launcher;
+import hudson.Extension;
+import hudson.FilePath;
+import hudson.util.FormValidation;
+import hudson.model.AbstractProject;
+import hudson.model.Run;
+import hudson.model.TaskListener;
+import hudson.tasks.Builder;
+import hudson.tasks.BuildStepDescriptor;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+
+import javax.servlet.ServletException;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.List;
+
+import jenkins.tasks.SimpleBuildStep;
+import org.jenkinsci.Symbol;
+
+public class HelloWorldBuilder extends Builder implements SimpleBuildStep {
+    private String bkRoot, prodRoot, packageRoot; //在目标服务器上的备份路径、发布目的地、增量包解压路径
+    public static String SRCPATH, COMPILETO;       //源代码路径,编译输出路径
+    private String shType;//脚本文件格式
+    private String regexStrs, replaceStrs, ignoreStrs;
+    public static String[] REGEXS = null, REPLACES = null;//changelog匹配表达式列表，替换值列表
+    public static String[] IGNORES = null; //忽略的文件列表 。比如生产环境的配置文件。
+    public static int BUILDNUMBER;
+    public static String JOBNAME;
+    public static PrintStream LOG;
+
+    @DataBoundConstructor
+    public HelloWorldBuilder(String srcPath, String compileTo, String bkRoot, String prodRoot, String packageRoot, String shType, String regexStrs, String replaceStrs, String ignoreStrs) {
+        this.bkRoot = bkRoot;
+        this.prodRoot = prodRoot;
+        this.packageRoot = packageRoot;
+        this.shType = shType;
+
+        this.regexStrs = regexStrs;
+        this.replaceStrs = replaceStrs;
+        this.ignoreStrs = ignoreStrs;
+
+        if (regexStrs != null && !"".equalsIgnoreCase(regexStrs)) {
+            REGEXS = regexStrs.split("\n");
+        }
+        if (replaceStrs != null && !"".equalsIgnoreCase(replaceStrs)) {
+            REPLACES = replaceStrs.split("\n");
+        }
+        if (ignoreStrs != null && !"".equalsIgnoreCase(ignoreStrs)) {
+            IGNORES = ignoreStrs.split("\n");
+        }
+    }
+
+
+    @Override
+    public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) throws InterruptedException, IOException {
+        EnvVars envs = run.getEnvironment(listener);
+        JOBNAME = envs.get("JOB_NAME");
+        BUILDNUMBER = run.getNumber();
+        String homePath = workspace.absolutize().getParent().getParent().getRemote() + "/";
+        String jobPath = homePath + "/jobs/" + JOBNAME + "/" + BUILDNUMBER + "/";
+        String workspacePath = homePath + "/" + "workspace" + "/" + JOBNAME + "/";
+
+        LOG = listener.getLogger();
+        LOG.println("-----------------------------------------------------------------");
+        LOG.println("增量打包插件执行中...");
+        LOG.println("mailto kangshu@ciic.com.cn");
+        LOG.println("-----------------------------------------------------------------");
+        LOG.println("");
+        LOG.println("脚本文件格式\t" + shType);
+        LOG.println("");
+        LOG.println("打包文件保存目录\t" + jobPath);
+        LOG.println("编译输出目录\t" + workspacePath);
+        LOG.println("构建编号\t" + run.getNumber());
+        LOG.println("预设的服务器上的 备份目录\t" + bkRoot);
+        LOG.println("预设的服务器上的 应用部署目录\t" + prodRoot);
+        LOG.println("预设的服务器上的 增量包解压目录\t" + packageRoot);
+        LOG.println("");
+
+
+        Document doc = null;
+        try {
+            doc = new SAXReader().read(new File(jobPath + "changelog.xml"));
+        } catch (DocumentException e) {
+            throw new IOException("读取changelog.xml出错");
+        }
+        try (PackageTools pk = new PackageTools(jobPath, workspacePath, bkRoot + "/" + BUILDNUMBER + "/", prodRoot, packageRoot, shType)) {
+            List<Node> nodes = doc.selectNodes("//path");
+            for (Node n : nodes) {
+                Element e = (Element) n;
+                String action = e.attribute("action").getValue();
+                String file = e.attribute("localPath").getValue();
+                String kind = e.attribute("kind").getValue();
+                pk.append(file, kind, action);
+            }
+            pk.save();
+        }
+    }
+
+    @Symbol("greet")
+    @Extension
+    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+
+        public FormValidation doCheckName(@QueryParameter String srcPath, @QueryParameter String compileTo, @QueryParameter String bkRoot, @QueryParameter String prodRoot, @QueryParameter String packageRoot, @QueryParameter String shType, @QueryParameter String regexStrs, @QueryParameter String replaceStrs, @QueryParameter String ignoreStrs) {
+            if (isNull(srcPath)) return FormValidation.error("必须输入java src路径");
+            if (isNull(compileTo)) return FormValidation.error("必须输入java 编译输出路径");
+            if (isNull(bkRoot)) return FormValidation.error("必须设置应用服务器上的备份目录路径");
+            if (isNull(prodRoot)) return FormValidation.error("必须设置应用服务器上的应用部署目录路径");
+            if (isNull(packageRoot)) return FormValidation.error("必须设置应用服务器上的增量包解压目录路径");
+
+            int regCount = 0, replaceCount = 0;
+            if (!isNull(regexStrs)) {
+                regCount = regexStrs.split("\n").length;
+            }
+            if (!isNull(replaceStrs))
+                replaceCount = replaceStrs.split("\n").length;
+            if (regCount != replaceCount)
+                return FormValidation.error("查找表达式与替换内容行数必须一致");
+
+
+            return FormValidation.ok();
+        }
+
+        @Override
+        public boolean isApplicable(Class<? extends AbstractProject> aClass) {
+            return true;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "package increment deploy file";
+        }
+
+        private boolean isNull(String str) {
+            return str == null || "".equalsIgnoreCase(str);
+        }
+    }
+
+}
