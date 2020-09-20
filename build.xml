@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<project name="AntProject" basedir="." default="compile">  
+  
+    <!-- 定义时间戳 -->  
+    <tstamp></tstamp>  
+      
+    <property name="classes" location="./WebRoot/WEB-INF/classes"/>  
+    <property name="jarpath" location="./WebRoot/WEB-INF/lib"/>  
+  	<target name="clean">
+  		<delete dir="${classes}"/>
+  	</target>
+
+    <target name="init">  
+        <mkdir dir="${classes}"/>  
+        <copy todir="${classes}">
+        	<fileset dir="./src">
+        		<include name="*.properties"/>
+        	</fileset>
+        </copy>
+    </target>  
+  
+    <path id="classpath">
+        <fileset dir="${jarpath}">
+            <include name="**/*.jar" />
+        </fileset>
+    </path>
+
+    <!-- 编译java源文件 -->  
+    <target name="compile" depends="init">  
+        <javac srcdir="./src" destdir="${classes}" includeantruntime="false" debug="true">
+            <compilerarg line=" -encoding utf-8 -nowarn" />
+            <classpath refid="classpath" />
+        </javac>  
+    </target>  
+     
+</project>  
