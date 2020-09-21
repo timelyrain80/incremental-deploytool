@@ -16,9 +16,9 @@ import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
-import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -27,9 +27,9 @@ import java.util.List;
 import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
 
-public class HelloWorldBuilder extends Builder implements SimpleBuildStep {
+public class PluginBuilder extends Builder implements SimpleBuildStep {
     private String bkRoot, prodRoot, packageRoot; //在目标服务器上的备份路径、发布目的地、增量包解压路径
-    public static String SRCPATH, COMPILETO;       //源代码路径,编译输出路径
+    public static String srcPath, compileTo;       //源代码路径,编译输出路径
     private String shType;//脚本文件格式
     private String regexStrs, replaceStrs, ignoreStrs;
     public static String[] REGEXS = null, REPLACES = null;//changelog匹配表达式列表，替换值列表
@@ -39,7 +39,7 @@ public class HelloWorldBuilder extends Builder implements SimpleBuildStep {
     public static PrintStream LOG;
 
     @DataBoundConstructor
-    public HelloWorldBuilder(String srcPath, String compileTo, String bkRoot, String prodRoot, String packageRoot, String shType, String regexStrs, String replaceStrs, String ignoreStrs) {
+    public PluginBuilder(String srcPath, String compileTo, String bkRoot, String prodRoot, String packageRoot, String shType, String regexStrs, String replaceStrs, String ignoreStrs) {
         this.bkRoot = bkRoot;
         this.prodRoot = prodRoot;
         this.packageRoot = packageRoot;
@@ -137,7 +137,7 @@ public class HelloWorldBuilder extends Builder implements SimpleBuildStep {
 
         @Override
         public String getDisplayName() {
-            return "package increment deploy file";
+            return "打包增量发布文件";
         }
 
         private boolean isNull(String str) {
@@ -145,4 +145,76 @@ public class HelloWorldBuilder extends Builder implements SimpleBuildStep {
         }
     }
 
+
+    public String getBkRoot() {
+        return bkRoot;
+    }
+    @DataBoundSetter
+    public void setBkRoot(String bkRoot) {
+        this.bkRoot = bkRoot;
+    }
+
+    public String getProdRoot() {
+        return prodRoot;
+    }
+    @DataBoundSetter
+    public void setProdRoot(String prodRoot) {
+        this.prodRoot = prodRoot;
+    }
+
+    public String getPackageRoot() {
+        return packageRoot;
+    }
+    @DataBoundSetter
+    public void setPackageRoot(String packageRoot) {
+        this.packageRoot = packageRoot;
+    }
+
+    public String getSrcPath() {
+        return srcPath;
+    }
+    @DataBoundSetter
+    public void setSrcPath(String srcPath) {
+        PluginBuilder.srcPath = srcPath;
+    }
+
+    public String getCompileTo() {
+        return compileTo;
+    }
+    @DataBoundSetter
+    public void setCompileTo(String compileTo) {
+        PluginBuilder.compileTo = compileTo;
+    }
+
+    public String getShType() {
+        return shType;
+    }
+    @DataBoundSetter
+    public void setShType(String shType) {
+        this.shType = shType;
+    }
+
+    public String getRegexStrs() {
+        return regexStrs;
+    }
+    @DataBoundSetter
+    public void setRegexStrs(String regexStrs) {
+        this.regexStrs = regexStrs;
+    }
+
+    public String getReplaceStrs() {
+        return replaceStrs;
+    }
+    @DataBoundSetter
+    public void setReplaceStrs(String replaceStrs) {
+        this.replaceStrs = replaceStrs;
+    }
+
+    public String getIgnoreStrs() {
+        return ignoreStrs;
+    }
+    @DataBoundSetter
+    public void setIgnoreStrs(String ignoreStrs) {
+        this.ignoreStrs = ignoreStrs;
+    }
 }
