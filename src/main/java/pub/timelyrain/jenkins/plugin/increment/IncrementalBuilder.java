@@ -71,7 +71,7 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
         JOBNAME = envs.get("JOB_NAME");
         BUILDNUMBER = run.getNumber();
         String homePath = workspace.absolutize().getParent().getParent().getRemote() + "/";
-        String jobPath = homePath + "/jobs/" + JOBNAME + "/" + BUILDNUMBER + "/";
+        String jobPath = homePath + "/jobs/" + JOBNAME + "/builds/" + BUILDNUMBER + "/";
         String workspacePath = homePath + "/" + "workspace" + "/" + JOBNAME + "/";
 
         LOG = listener.getLogger();
