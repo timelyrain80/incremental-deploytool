@@ -27,9 +27,9 @@ import java.util.List;
 import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
 
-public class PluginBuilder extends Builder implements SimpleBuildStep {
+public class IncrementalBuilder extends Builder implements SimpleBuildStep {
     private String bkRoot, prodRoot, packageRoot; //在目标服务器上的备份路径、发布目的地、增量包解压路径
-    public static String srcPath, compileTo;       //源代码路径,编译输出路径
+    private String srcPath, compileTo;       //源代码路径,编译输出路径
     private String shType;//脚本文件格式
     private String regexStrs, replaceStrs, ignoreStrs;
     public static String[] REGEXS = null, REPLACES = null;//changelog匹配表达式列表，替换值列表
@@ -39,7 +39,10 @@ public class PluginBuilder extends Builder implements SimpleBuildStep {
     public static PrintStream LOG;
 
     @DataBoundConstructor
-    public PluginBuilder(String srcPath, String compileTo, String bkRoot, String prodRoot, String packageRoot, String shType, String regexStrs, String replaceStrs, String ignoreStrs) {
+    public IncrementalBuilder(String srcPath, String compileTo, String bkRoot, String prodRoot, String packageRoot, String shType, String regexStrs, String replaceStrs, String ignoreStrs) {
+        this.srcPath = srcPath;
+        this.compileTo = compileTo;
+
         this.bkRoot = bkRoot;
         this.prodRoot = prodRoot;
         this.packageRoot = packageRoot;
@@ -63,6 +66,7 @@ public class PluginBuilder extends Builder implements SimpleBuildStep {
 
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) throws InterruptedException, IOException {
+        System.out.println("dafdafda");
         EnvVars envs = run.getEnvironment(listener);
         JOBNAME = envs.get("JOB_NAME");
         BUILDNUMBER = run.getNumber();
@@ -110,25 +114,60 @@ public class PluginBuilder extends Builder implements SimpleBuildStep {
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        public FormValidation doCheckName(@QueryParameter String srcPath, @QueryParameter String compileTo, @QueryParameter String bkRoot, @QueryParameter String prodRoot, @QueryParameter String packageRoot, @QueryParameter String shType, @QueryParameter String regexStrs, @QueryParameter String replaceStrs, @QueryParameter String ignoreStrs) {
-            if (isNull(srcPath)) return FormValidation.error("必须输入java src路径");
+        public FormValidation doCheckSrcPath(@QueryParameter String srcPath) {
+            if (isNull(srcPath))
+                return FormValidation.error("必须输入java src路径");
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckCompileTo(@QueryParameter String compileTo) {
             if (isNull(compileTo)) return FormValidation.error("必须输入java 编译输出路径");
-            if (isNull(bkRoot)) return FormValidation.error("必须设置应用服务器上的备份目录路径");
-            if (isNull(prodRoot)) return FormValidation.error("必须设置应用服务器上的应用部署目录路径");
-            if (isNull(packageRoot)) return FormValidation.error("必须设置应用服务器上的增量包解压目录路径");
+            return FormValidation.ok();
+        }
 
-            int regCount = 0, replaceCount = 0;
-            if (!isNull(regexStrs)) {
-                regCount = regexStrs.split("\n").length;
-            }
-            if (!isNull(replaceStrs))
-                replaceCount = replaceStrs.split("\n").length;
-            if (regCount != replaceCount)
-                return FormValidation.error("查找表达式与替换内容行数必须一致");
+        public FormValidation doCheckBkRoot(@QueryParameter String bkRoot) {
+            if (isNull(bkRoot)) return FormValidation.error("必须设置应用服务器上的备份目录");
+            return FormValidation.ok();
+        }
 
+        public FormValidation doCheckProdRoot(@QueryParameter String prodRoot) {
+            if (isNull(prodRoot)) return FormValidation.error("必须设置应用服务器上的应用部署目录");
 
             return FormValidation.ok();
         }
+        public FormValidation doCheckPackageRoot(@QueryParameter String packageRoot) {
+            if (isNull(packageRoot)) return FormValidation.error("必须设置应用服务器上的增量包解压目录");
+
+            return FormValidation.ok();
+        }
+
+//        public FormValidation doCheckRegexStrs(@QueryParameter String regexStrs) {
+//            int regCount = 0 ,replaceCount = 0;
+//            if (!isNull(regexStrs)) {
+//                REGEXS = regexStrs.split("\n");
+//                regCount = REGEXS.length;
+//            }
+//
+//            if(regCount == 0 )
+//            if (regCount != IncrementalBuilder.REPLACES.length)
+//                return FormValidation.error("查找表达式与替换内容行数必须一致");
+//
+//
+//            return FormValidation.ok();
+//        }
+//
+//        public FormValidation doCheckReplaceStrs(@QueryParameter String replaceStrs) {
+//            int regCount = 0, replaceCount = 0;
+//
+//            if (!isNull(replaceStrs))
+//                replaceCount = replaceStrs.split("\n").length;
+//            if (regCount != replaceCount)
+//                return FormValidation.error("查找表达式与替换内容行数必须一致");
+//
+//
+//            return FormValidation.ok();
+//        }
+
 
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
@@ -149,6 +188,7 @@ public class PluginBuilder extends Builder implements SimpleBuildStep {
     public String getBkRoot() {
         return bkRoot;
     }
+
     @DataBoundSetter
     public void setBkRoot(String bkRoot) {
         this.bkRoot = bkRoot;
@@ -157,6 +197,7 @@ public class PluginBuilder extends Builder implements SimpleBuildStep {
     public String getProdRoot() {
         return prodRoot;
     }
+
     @DataBoundSetter
     public void setProdRoot(String prodRoot) {
         this.prodRoot = prodRoot;
@@ -165,6 +206,7 @@ public class PluginBuilder extends Builder implements SimpleBuildStep {
     public String getPackageRoot() {
         return packageRoot;
     }
+
     @DataBoundSetter
     public void setPackageRoot(String packageRoot) {
         this.packageRoot = packageRoot;
@@ -173,22 +215,25 @@ public class PluginBuilder extends Builder implements SimpleBuildStep {
     public String getSrcPath() {
         return srcPath;
     }
+
     @DataBoundSetter
     public void setSrcPath(String srcPath) {
-        PluginBuilder.srcPath = srcPath;
+        this.srcPath = srcPath;
     }
 
     public String getCompileTo() {
         return compileTo;
     }
+
     @DataBoundSetter
     public void setCompileTo(String compileTo) {
-        PluginBuilder.compileTo = compileTo;
+        this.compileTo = compileTo;
     }
 
     public String getShType() {
         return shType;
     }
+
     @DataBoundSetter
     public void setShType(String shType) {
         this.shType = shType;
@@ -197,6 +242,7 @@ public class PluginBuilder extends Builder implements SimpleBuildStep {
     public String getRegexStrs() {
         return regexStrs;
     }
+
     @DataBoundSetter
     public void setRegexStrs(String regexStrs) {
         this.regexStrs = regexStrs;
@@ -205,6 +251,7 @@ public class PluginBuilder extends Builder implements SimpleBuildStep {
     public String getReplaceStrs() {
         return replaceStrs;
     }
+
     @DataBoundSetter
     public void setReplaceStrs(String replaceStrs) {
         this.replaceStrs = replaceStrs;
@@ -213,6 +260,7 @@ public class PluginBuilder extends Builder implements SimpleBuildStep {
     public String getIgnoreStrs() {
         return ignoreStrs;
     }
+
     @DataBoundSetter
     public void setIgnoreStrs(String ignoreStrs) {
         this.ignoreStrs = ignoreStrs;

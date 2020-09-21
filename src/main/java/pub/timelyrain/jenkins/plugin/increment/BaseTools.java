@@ -4,6 +4,6 @@ public class BaseTools {
 
 
     protected void log(String s) {
-        PluginBuilder.LOG.println("\t" + s);
+        IncrementalBuilder.LOG.println("\t" + s);
     }
 }
