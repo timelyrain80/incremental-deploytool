@@ -137,6 +137,9 @@ public class Cmd {
 
     private String dstPath(String file) {
         int idx = file.lastIndexOf(File.separator);
-        return file.substring(0, idx) + "/";
+        if(idx == -1)
+            return "";
+        else
+            return file.substring(0, idx) + "/";
     }
 }

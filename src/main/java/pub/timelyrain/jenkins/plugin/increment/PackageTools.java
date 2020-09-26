@@ -199,7 +199,8 @@ public class PackageTools {
             dpList.add(0, env);
             rbList.add(0, env);
 
-            bkList.add(cmd.cp("03-rb." + cmd.extName(), rs.getPackageRoot(), rs.getBkRoot()));
+            bkList.add(cmd.cp("03-rb." + cmd.extName(), cmd.getVar("PACKAGE_ROOT"), cmd.getVar("BK_ROOT")));
+            bkList.add(cmd.cp("package.zip", cmd.getVar("PACKAGE_ROOT"), cmd.getVar("BK_ROOT")));
 
             IOUtils.writeLines(bkList, cmd.cr(), bk, cmd.encoding());
             IOUtils.writeLines(dpList, cmd.cr(), dp, cmd.encoding());
@@ -207,6 +208,8 @@ public class PackageTools {
         }
         //压缩目录
         ZipTools.zipFiles(rs.getJobPath() + "package/", rs.getJobPath() + "package.zip");
+        //复制到workspace内,以便后续sshcopy插件上传
+        FileUtils.copyFile(new File(rs.getJobPath() + "package.zip"), new File(rs.getWorkspacePath() + "package.zip"));
         //删除package临时目录
         FileUtils.deleteDirectory(new File(rs.getJobPath() + "package/"));
 
