@@ -38,10 +38,10 @@
     </f:entry>
 
         <f:entry title="查找条件" field="regexStrs" description="用回车分隔，支持正则，每个表达式一行，与替换内容一一对应">
-            <f:textarea default="src\n.java"/>
+            <f:textarea default="${descriptor.getRegs()}"/>
         </f:entry>
         <f:entry title="替换内容" field="replaceStrs" description="用回车分隔，支持正则，每个表达式一行，与查找条件一一对应">
-            <f:textarea default="Webroot/WEB-INF/classes\n.class"/>
+            <f:textarea default="${descriptor.getReplaces()}"/>
         </f:entry>
         <f:entry title="忽略文件列表" field="ignoreStrs" description="用回车分隔，每个表达式一行，支持正则，即使文件在变更列表内，也不进行发布。比如可以添加生产环境的数据库配置文件，避免误操作覆盖。">
             <f:textarea/>

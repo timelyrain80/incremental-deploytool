@@ -100,6 +100,12 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
             list.add("windows");
             return list;
         }
+        public String getRegs(){
+            return "src\n.java";
+        }
+        public String getReplaces(){
+            return "Webroot/WEB-INF/classes\n.class";
+        }
         //检查设置参数是否符合规则
 //        public FormValidation doCheckSrcPath(@QueryParameter String srcPath) {
 //            if (isNull(srcPath))
