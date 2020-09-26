@@ -11,9 +11,7 @@ import org.dom4j.io.SAXReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class PackageTools {
     private Cmd cmd = null;
@@ -44,6 +42,39 @@ public class PackageTools {
             log("\n无需要打包的文件，插件退出");
             return;
         }
+
+//        //判断重复文件的增改删.
+//        //一个文件有多次变动只需要处理一次.
+//        //一个文件如果同时有增改删 则不需要发布. 如果同时有增改 则只需要按新增处理,如果有改删.则只需要按删除处理.所以要重新整理文件列表
+//        //AU=A  AD|AUD=null UD=D
+//        LinkedHashMap<String, String> fileList = new LinkedHashMap<>();
+//        HashMap<String, String> kinds = new HashMap<>();
+//        for (Node n : nodes) {
+//            Element e = (Element) n;
+//            String act = e.attribute("action").getValue();
+//            String file = e.attribute("localPath").getValue();
+//            String kind = e.attribute("kind").getValue();
+//
+//            String actions = fileList.get(file);
+//            if (actions == null) {
+//                actions = act;
+//            } else {
+//                actions += act;
+//            }
+//            fileList.put(file, actions);
+//            kinds.put(file, kind);
+//        }
+//        LinkedHashMap<String, String> resultFileList = new LinkedHashMap<>();
+//        for(String file : fileList.keySet()){
+//            String actions = fileList.get(file);
+//            String resultAction = null;
+//            if(actions == null) {
+//                log("\t文件缺少action标记 " + file);
+//                continue;
+//            }
+//            if(actions.indexOf("A"))
+//
+//        }
 
 
         for (Node n : nodes) {
@@ -160,13 +191,15 @@ public class PackageTools {
                 FileOutputStream rb = new FileOutputStream(new File(rs.getJobPath() + "package/03-rb." + cmd.extName()), false);
         ) {
             //插入环境变量
-            String env = cmd.setVar("BK_ROOT", rs.getBkRoot()) + "\n";
+            String env = cmd.setVar("BK_ROOT", rs.getBkRoot()) + rs.getBuildNumber() + cmd.separator() + "\n";
             env += cmd.setVar("PROD_ROOT", rs.getProdRoot()) + "\n";
             env += cmd.setVar("PACKAGE_ROOT", rs.getPackageRoot()) + "\n";
 
             bkList.add(0, env);
             dpList.add(0, env);
             rbList.add(0, env);
+
+            bkList.add(cmd.cp("03-rb." + cmd.extName(), rs.getPackageRoot(), rs.getBkRoot()));
 
             IOUtils.writeLines(bkList, cmd.cr(), bk, cmd.encoding());
             IOUtils.writeLines(dpList, cmd.cr(), dp, cmd.encoding());

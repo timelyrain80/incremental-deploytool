@@ -22,6 +22,7 @@ import org.kohsuke.stapler.QueryParameter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import jenkins.tasks.SimpleBuildStep;
@@ -39,7 +40,6 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
     private PrintStream LOG;
 
 
-
     @DataBoundConstructor
     public IncrementalBuilder(String bkRoot, String prodRoot, String packageRoot, String shType, String regexStrs, String replaceStrs, String ignoreStrs) {
 //        this.srcPath = srcPath;
@@ -52,7 +52,7 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
 
 
         this.regexStrs = regexStrs != null ? "src\n.java" : regexStrs;
-        this.replaceStrs = replaceStrs != null ? "Webroot/WEB-INF/classes\n.class":"";
+        this.replaceStrs = replaceStrs != null ? "Webroot/WEB-INF/classes\n.class" : "";
         this.ignoreStrs = ignoreStrs;
 
         if (regexStrs != null && !"".equalsIgnoreCase(regexStrs)) {
@@ -83,7 +83,7 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
         LOG.println("");
 
         //调用打包程序
-        RuntimeSetting rs = new RuntimeSetting(bkRoot,prodRoot,packageRoot,shType,regexList, replaceList, ignoreList,homePath, buildNumber, jobName,listener.getLogger());
+        RuntimeSetting rs = new RuntimeSetting(bkRoot, prodRoot, packageRoot, shType, regexList, replaceList, ignoreList, homePath, buildNumber, jobName, listener.getLogger());
         PackageTools pk = new PackageTools(rs);
         pk.makePackage();
 
@@ -91,10 +91,15 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
     }
 
 
-
     @Symbol("greet")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+        public List<String> getShTypes() {
+            ArrayList<String> list = new ArrayList<>();
+            list.add("linux");
+            list.add("windows");
+            return list;
+        }
         //检查设置参数是否符合规则
 //        public FormValidation doCheckSrcPath(@QueryParameter String srcPath) {
 //            if (isNull(srcPath))
@@ -256,7 +261,6 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
     public void setIgnoreStrs(String ignoreStrs) {
         this.ignoreStrs = ignoreStrs;
     }
-
 
 
 }

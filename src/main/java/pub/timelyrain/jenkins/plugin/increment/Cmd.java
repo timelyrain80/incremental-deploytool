@@ -24,9 +24,9 @@ public class Cmd {
     public String setVar(String var, String value) {
         String sh = null;
         if (isWin)
-            sh = "set " + var + "=" + pathConvert(value) ;
+            sh = "set " + var + "=" + pathConvert(value);
         else
-            sh = "export " + var + "=" + pathConvert(value) ;
+            sh = "export " + var + "=" + pathConvert(value);
         return sh;
     }
 
@@ -97,7 +97,7 @@ public class Cmd {
     public String pathConvert(String path) {
 //        path += cr();
         if (isWin)
-            return path.replaceAll("/", "\\");
+            return path.replaceAll("/", "\\\\");
         else
             return path.replaceAll("\\\\", "/");
     }
@@ -109,6 +109,13 @@ public class Cmd {
             return "sh";
     }
 
+    public String separator() {
+        if (isWin)
+            return "\\";
+        else
+            return "/";
+    }
+
     public String cr() {
         if (isWin)
             return "\r\n";
@@ -116,7 +123,7 @@ public class Cmd {
             return "\n";
     }
 
-    public String encoding(){
+    public String encoding() {
         if (isWin)
             return "GBK";
         else

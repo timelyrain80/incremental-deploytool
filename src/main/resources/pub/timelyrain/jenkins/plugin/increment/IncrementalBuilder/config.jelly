@@ -21,8 +21,19 @@
 
     <f:entry title="脚本文件格式" field="shType">
         <select name="shType">
-            <option value="linux">linux</option>
-            <option value="windows">windows</option>
+            <j:forEach var="loop" items="${descriptor.getShTypes()}" >
+                <j:if test="${instance.shType != null}">
+                    <j:if test="${instance.shType == loop}">
+                        <option value="${loop}" selected="selected">${loop}</option>
+                    </j:if>
+                    <j:if test="${instance.shType != loop}">
+                        <option value="${loop}" >${loop}</option>
+                    </j:if>
+                </j:if>
+                <j:if test="${instance.shType == null}">
+                    <option value="${loop}">${loop}</option>
+                </j:if>
+            </j:forEach>
         </select>
     </f:entry>
 
