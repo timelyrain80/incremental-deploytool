@@ -1,6 +1,6 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-
+<!--
     <f:entry title="源代码路径" field="srcPath" description="以代码检出目录为根目录，src/com/ciic/xx则设置为src">
         <f:textbox/>
     </f:entry>
@@ -8,7 +8,7 @@
     <f:entry title="编译输出路径" field="compileTo" description="编译输出路径，以代码检出目录为根目录，如webroot\WEB-INF\classes\xxx则设置为webroot\WEB-INF\classes">
         <f:textbox/>
     </f:entry>
-
+-->
     <f:entry title="应用服务器上程序备份路径" field="bkRoot" description="用于在部署前保存备份文件。">
         <f:textbox/>
     </f:entry>
@@ -26,16 +26,14 @@
         </select>
     </f:entry>
 
-    <f:advanced>
         <f:entry title="查找条件" field="regexStrs" description="用回车分隔，支持正则，每个表达式一行，与替换内容一一对应">
-            <f:textarea value="*.java"/>
+            <f:textarea/>
         </f:entry>
         <f:entry title="替换内容" field="replaceStrs" description="用回车分隔，支持正则，每个表达式一行，与查找条件一一对应">
-            <f:textarea value=".class"/>
+            <f:textarea/>
         </f:entry>
         <f:entry title="忽略文件列表" field="ignoreStrs" description="用回车分隔，每个表达式一行，支持正则，即使文件在变更列表内，也不进行发布。比如可以添加生产环境的数据库配置文件，避免误操作覆盖。">
             <f:textarea />
         </f:entry>
-    </f:advanced>
 
 </j:jelly>

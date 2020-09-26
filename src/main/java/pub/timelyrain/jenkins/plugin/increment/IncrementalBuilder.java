@@ -29,101 +29,83 @@ import org.jenkinsci.Symbol;
 
 public class IncrementalBuilder extends Builder implements SimpleBuildStep {
     private String bkRoot, prodRoot, packageRoot; //在目标服务器上的备份路径、发布目的地、增量包解压路径
-    private String srcPath, compileTo;       //源代码路径,编译输出路径
     private String shType;//脚本文件格式
     private String regexStrs, replaceStrs, ignoreStrs;
-    public static String[] REGEXS = null, REPLACES = null;//changelog匹配表达式列表，替换值列表
-    public static String[] IGNORES = null; //忽略的文件列表 。比如生产环境的配置文件。
-    public static int BUILDNUMBER;
-    public static String JOBNAME;
-    public static PrintStream LOG;
+
+    private String[] regexList = null, replaceList = null;//changelog匹配表达式列表，替换值列表
+    private String[] ignoreList = null; //忽略的文件列表 。比如生产环境的配置文件。
+    private int buildNumber;
+    private String jobName;
+    private PrintStream LOG;
+
+
 
     @DataBoundConstructor
-    public IncrementalBuilder(String srcPath, String compileTo, String bkRoot, String prodRoot, String packageRoot, String shType, String regexStrs, String replaceStrs, String ignoreStrs) {
-        this.srcPath = srcPath;
-        this.compileTo = compileTo;
+    public IncrementalBuilder(String bkRoot, String prodRoot, String packageRoot, String shType, String regexStrs, String replaceStrs, String ignoreStrs) {
+//        this.srcPath = srcPath;
+//        this.compileTo = compileTo;
 
         this.bkRoot = bkRoot;
         this.prodRoot = prodRoot;
         this.packageRoot = packageRoot;
         this.shType = shType;
 
-        this.regexStrs = regexStrs;
-        this.replaceStrs = replaceStrs;
+
+        this.regexStrs = regexStrs != null ? "src\n.java" : regexStrs;
+        this.replaceStrs = replaceStrs != null ? "Webroot/WEB-INF/classes\n.class":"";
         this.ignoreStrs = ignoreStrs;
 
         if (regexStrs != null && !"".equalsIgnoreCase(regexStrs)) {
-            REGEXS = regexStrs.split("\n");
+            regexList = regexStrs.split("\n");
         }
         if (replaceStrs != null && !"".equalsIgnoreCase(replaceStrs)) {
-            REPLACES = replaceStrs.split("\n");
+            replaceList = replaceStrs.split("\n");
         }
         if (ignoreStrs != null && !"".equalsIgnoreCase(ignoreStrs)) {
-            IGNORES = ignoreStrs.split("\n");
+            ignoreList = ignoreStrs.split("\n");
         }
     }
 
 
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) throws InterruptedException, IOException {
-        System.out.println("dafdafda");
+
         EnvVars envs = run.getEnvironment(listener);
-        JOBNAME = envs.get("JOB_NAME");
-        BUILDNUMBER = run.getNumber();
+        jobName = envs.get("JOB_NAME");
+        buildNumber = run.getNumber();
         String homePath = workspace.absolutize().getParent().getParent().getRemote() + "/";
-        String jobPath = homePath + "/jobs/" + JOBNAME + "/builds/" + BUILDNUMBER + "/";
-        String workspacePath = homePath + "/" + "workspace" + "/" + JOBNAME + "/";
 
         LOG = listener.getLogger();
+
         LOG.println("-----------------------------------------------------------------");
         LOG.println("增量打包插件执行中...");
-        LOG.println("mailto kangshu@ciic.com.cn");
         LOG.println("-----------------------------------------------------------------");
         LOG.println("");
-        LOG.println("脚本文件格式\t" + shType);
-        LOG.println("");
-        LOG.println("打包文件保存目录\t" + jobPath);
-        LOG.println("编译输出目录\t" + workspacePath);
-        LOG.println("构建编号\t" + run.getNumber());
-        LOG.println("预设的服务器上的 备份目录\t" + bkRoot);
-        LOG.println("预设的服务器上的 应用部署目录\t" + prodRoot);
-        LOG.println("预设的服务器上的 增量包解压目录\t" + packageRoot);
-        LOG.println("");
 
+        //调用打包程序
+        RuntimeSetting rs = new RuntimeSetting(bkRoot,prodRoot,packageRoot,shType,regexList, replaceList, ignoreList,homePath, buildNumber, jobName,listener.getLogger());
+        PackageTools pk = new PackageTools(rs);
+        pk.makePackage();
 
-        Document doc = null;
-        try {
-            doc = new SAXReader().read(new File(jobPath + "changelog.xml"));
-        } catch (DocumentException e) {
-            throw new IOException("读取changelog.xml出错");
-        }
-        try (PackageTools pk = new PackageTools(jobPath, workspacePath, bkRoot + "/" + BUILDNUMBER + "/", prodRoot, packageRoot, shType)) {
-            List<Node> nodes = doc.selectNodes("//path");
-            for (Node n : nodes) {
-                Element e = (Element) n;
-                String action = e.attribute("action").getValue();
-                String file = e.attribute("localPath").getValue();
-                String kind = e.attribute("kind").getValue();
-                pk.append(file, kind, action);
-            }
-            pk.save();
-        }
+        LOG.println("插件执行完毕");
     }
+
+
 
     @Symbol("greet")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
-
-        public FormValidation doCheckSrcPath(@QueryParameter String srcPath) {
-            if (isNull(srcPath))
-                return FormValidation.error("必须输入java src路径");
-            return FormValidation.ok();
-        }
-
-        public FormValidation doCheckCompileTo(@QueryParameter String compileTo) {
-            if (isNull(compileTo)) return FormValidation.error("必须输入java 编译输出路径");
-            return FormValidation.ok();
-        }
+        //检查设置参数是否符合规则
+//        public FormValidation doCheckSrcPath(@QueryParameter String srcPath) {
+//            if (isNull(srcPath))
+//                return FormValidation.error("必须输入java src路径");
+//            return FormValidation.ok();
+//        }
+//
+//        public FormValidation doCheckCompileTo(@QueryParameter String compileTo) {
+//            if (isNull(compileTo)) return FormValidation.error("必须输入java 编译输出路径");
+//            return FormValidation.ok();
+//        }
 
         public FormValidation doCheckBkRoot(@QueryParameter String bkRoot) {
             if (isNull(bkRoot)) return FormValidation.error("必须设置应用服务器上的备份目录");
@@ -135,6 +117,7 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
 
             return FormValidation.ok();
         }
+
         public FormValidation doCheckPackageRoot(@QueryParameter String packageRoot) {
             if (isNull(packageRoot)) return FormValidation.error("必须设置应用服务器上的增量包解压目录");
 
@@ -142,28 +125,36 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
         }
 
 //        public FormValidation doCheckRegexStrs(@QueryParameter String regexStrs) {
-//            int regCount = 0 ,replaceCount = 0;
+//            int regCount = 0, replaceCount = 0;
 //            if (!isNull(regexStrs)) {
-//                REGEXS = regexStrs.split("\n");
-//                regCount = REGEXS.length;
+//                regexList = regexStrs.split("\n");
+//                regCount = regexList.length;
 //            }
 //
-//            if(regCount == 0 )
-//            if (regCount != IncrementalBuilder.REPLACES.length)
+//            if (replaceList == null)
+//                replaceCount = 0;
+//            else
+//                replaceCount = replaceList.length;
+//            if (regCount != replaceCount)
 //                return FormValidation.error("查找表达式与替换内容行数必须一致");
-//
 //
 //            return FormValidation.ok();
 //        }
 //
 //        public FormValidation doCheckReplaceStrs(@QueryParameter String replaceStrs) {
 //            int regCount = 0, replaceCount = 0;
+//            if (!isNull(replaceStrs)) {
+//                replaceList = replaceStrs.split("\n");
+//                replaceCount = replaceList.length;
+//            }
 //
-//            if (!isNull(replaceStrs))
-//                replaceCount = replaceStrs.split("\n").length;
+//            if (regexList == null)
+//                regCount = 0;
+//            else
+//                regCount = regexList.length;
+//
 //            if (regCount != replaceCount)
 //                return FormValidation.error("查找表达式与替换内容行数必须一致");
-//
 //
 //            return FormValidation.ok();
 //        }
@@ -212,23 +203,23 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
         this.packageRoot = packageRoot;
     }
 
-    public String getSrcPath() {
-        return srcPath;
-    }
-
-    @DataBoundSetter
-    public void setSrcPath(String srcPath) {
-        this.srcPath = srcPath;
-    }
-
-    public String getCompileTo() {
-        return compileTo;
-    }
-
-    @DataBoundSetter
-    public void setCompileTo(String compileTo) {
-        this.compileTo = compileTo;
-    }
+//    public String getSrcPath() {
+//        return srcPath;
+//    }
+//
+//    @DataBoundSetter
+//    public void setSrcPath(String srcPath) {
+//        this.srcPath = srcPath;
+//    }
+//
+//    public String getCompileTo() {
+//        return compileTo;
+//    }
+//
+//    @DataBoundSetter
+//    public void setCompileTo(String compileTo) {
+//        this.compileTo = compileTo;
+//    }
 
     public String getShType() {
         return shType;
@@ -265,4 +256,7 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
     public void setIgnoreStrs(String ignoreStrs) {
         this.ignoreStrs = ignoreStrs;
     }
+
+
+
 }

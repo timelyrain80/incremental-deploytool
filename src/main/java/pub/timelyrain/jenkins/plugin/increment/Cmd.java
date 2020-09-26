@@ -1,29 +1,43 @@
 package pub.timelyrain.jenkins.plugin.increment;
 
+import java.io.File;
+
 public class Cmd {
     public static final String WIN = "windows";
     public static final String LINUX = "linux";
 
     private boolean isWin;
-    private String bkPath, prodPath, distPath;
 
     /**
      * 默认为Cmd.WIN  =  windows
      */
-    public Cmd(String bkPath, String prodPath, String distPath) {
+    public Cmd() {
         isWin = true;
-        this.bkPath = bkPath;
-        this.prodPath = prodPath;
-        this.distPath = distPath;
     }
 
-    public Cmd(String os, String bkPath, String prodPath, String distPath) {
+
+    public Cmd(String os) {
         this.isWin = WIN.equalsIgnoreCase(os);
-        this.bkPath = bkPath;
-        this.prodPath = prodPath;
-        this.distPath = distPath;
     }
 
+
+    public String setVar(String var, String value) {
+        String sh = null;
+        if (isWin)
+            sh = "set " + var + "=" + pathConvert(value) ;
+        else
+            sh = "export " + var + "=" + pathConvert(value) ;
+        return sh;
+    }
+
+    public String getVar(String var) {
+        String sh = null;
+        if (isWin)
+            sh = "%" + var + "%";
+        else
+            sh = "$" + var;
+        return sh;
+    }
 
     public String cp(String file, String src, String dst) {
         String sh = null;
@@ -83,9 +97,9 @@ public class Cmd {
     public String pathConvert(String path) {
 //        path += cr();
         if (isWin)
-            return path.replaceAll("/", "\\\\");
+            return path.replaceAll("/", "\\");
         else
-            return path;
+            return path.replaceAll("\\\\", "/");
     }
 
     public String extName() {
@@ -102,13 +116,20 @@ public class Cmd {
             return "\n";
     }
 
+    public String encoding(){
+        if (isWin)
+            return "GBK";
+        else
+            return "utf-8";
+    }
+
     private String multiFile(String file) {
         int idx = file.lastIndexOf(".");
         return file.substring(0, idx) + "*" + file.substring(idx, file.length());
     }
 
     private String dstPath(String file) {
-        int idx = file.lastIndexOf("/");
+        int idx = file.lastIndexOf(File.separator);
         return file.substring(0, idx) + "/";
     }
 }
