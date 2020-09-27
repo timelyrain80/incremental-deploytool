@@ -79,6 +79,7 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
 
         LOG.println("-----------------------------------------------------------------");
         LOG.println("增量打包插件执行中...");
+        LOG.println("github: https://github.com/timelyrain80/incremental-deploytool.git");
         LOG.println("-----------------------------------------------------------------");
         LOG.println("");
 
