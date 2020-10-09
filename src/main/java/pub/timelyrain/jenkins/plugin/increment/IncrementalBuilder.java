@@ -29,6 +29,7 @@ import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
 
 public class IncrementalBuilder extends Builder implements SimpleBuildStep {
+    private String srcRoot, webRoot;
     private String bkRoot, prodRoot, packageRoot; //在目标服务器上的备份路径、发布目的地、增量包解压路径
     private String shType;//脚本文件格式
     private String regexStrs, replaceStrs, ignoreStrs;
@@ -41,9 +42,9 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
 
 
     @DataBoundConstructor
-    public IncrementalBuilder(String bkRoot, String prodRoot, String packageRoot, String shType, String regexStrs, String replaceStrs, String ignoreStrs) {
-//        this.srcPath = srcPath;
-//        this.compileTo = compileTo;
+    public IncrementalBuilder(String srcRoot, String webRoot, String bkRoot, String prodRoot, String packageRoot, String shType, String regexStrs, String replaceStrs, String ignoreStrs) {
+        this.srcRoot = srcRoot;
+        this.webRoot = webRoot;
 
         this.bkRoot = bkRoot;
         this.prodRoot = prodRoot;
@@ -51,8 +52,8 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
         this.shType = shType;
 
 
-        this.regexStrs = regexStrs != null ? "src\n.java" : regexStrs;
-        this.replaceStrs = replaceStrs != null ? "Webroot/WEB-INF/classes\n.class" : "";
+        this.regexStrs = regexStrs;
+        this.replaceStrs = replaceStrs;
         this.ignoreStrs = ignoreStrs;
 
         if (regexStrs != null && !"".equalsIgnoreCase(regexStrs)) {
@@ -84,7 +85,7 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
         LOG.println("");
 
         //调用打包程序
-        RuntimeSetting rs = new RuntimeSetting(bkRoot, prodRoot, packageRoot, shType, regexList, replaceList, ignoreList, homePath, buildNumber, jobName, listener.getLogger());
+        RuntimeSetting rs = new RuntimeSetting(srcRoot, webRoot, bkRoot, prodRoot, packageRoot, shType, regexList, replaceList, ignoreList, homePath, buildNumber, jobName, listener.getLogger());
         PackageTools pk = new PackageTools(rs);
         pk.makePackage();
 
@@ -101,11 +102,13 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
             list.add("windows");
             return list;
         }
-        public String getRegs(){
-            return "src\n.java";
+
+        public String getRegs() {
+            return "";
         }
-        public String getReplaces(){
-            return "Webroot/WEB-INF/classes\n.class";
+
+        public String getReplaces() {
+            return "";
         }
         //检查设置参数是否符合规则
 //        public FormValidation doCheckSrcPath(@QueryParameter String srcPath) {
@@ -187,6 +190,23 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
         }
     }
 
+    public String getSrcRoot() {
+        return srcRoot;
+    }
+
+    @DataBoundSetter
+    public void setSrcRoot(String srcRoot) {
+        this.srcRoot = srcRoot;
+    }
+
+    public String getWebRoot() {
+        return webRoot;
+    }
+
+    @DataBoundSetter
+    public void setWebRoot(String webRoot) {
+        this.webRoot = webRoot;
+    }
 
     public String getBkRoot() {
         return bkRoot;

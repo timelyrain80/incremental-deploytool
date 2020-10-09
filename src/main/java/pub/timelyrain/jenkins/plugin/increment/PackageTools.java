@@ -7,8 +7,10 @@ import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
+import pub.timelyrain.jenkins.plugin.increment.pojo.ChangeFile;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
@@ -29,19 +31,7 @@ public class PackageTools {
      * @throws IOException
      */
     public void makePackage() throws IOException {
-        Document doc = null;
-        try {
-            doc = new SAXReader().read(new File(rs.getJobPath() + "changelog.xml"));
-        } catch (DocumentException e) {
-            throw new IOException("读取changelog.xml出错");
-        }
 
-        //读取changelist
-        List<Node> nodes = doc.selectNodes("//path");
-        if (nodes == null || nodes.isEmpty()) {
-            log("\n无需要打包的文件，插件退出");
-            return;
-        }
 
 //        //判断重复文件的增改删.
 //        //一个文件有多次变动只需要处理一次.
@@ -75,17 +65,22 @@ public class PackageTools {
 //            if(actions.indexOf("A"))
 //
 //        }
-
-
-        for (Node n : nodes) {
-            Element e = (Element) n;
-            String action = e.attribute("action").getValue();
-            String file = e.attribute("localPath").getValue();
-            String kind = e.attribute("kind").getValue();
-            append(file, kind, action);
+        try {
+            List<ChangeFile> list = getChangeList();
+            if (list == null || list.isEmpty()) {
+                log("\t无需要打包的文件,插件退出");
+                return;
+            }
+            for (ChangeFile f : list) {
+                append(f.getFile(), f.getKind(), f.getAction());
+            }
+            save();
+            this.writeSuccessedPackageNumber();
+            log("插件退出");
+        } catch (Exception e) {
+            this.writeFailurePackageNumber();
+            throw e;
         }
-        save();
-
     }
 
 
@@ -103,6 +98,10 @@ public class PackageTools {
     public void append(String file, String kind, String action) throws IOException {
         file = fileNameConvert(file);
         log("\n处理 " + action + " " + file); //日志输出个空行，将一个文件分割为一组日志，方便查看。
+
+        if (isIgnores(file)) {
+            return;
+        }
 
         if ("dir".equalsIgnoreCase(kind) && "A".equalsIgnoreCase(action)) {
             //目录需要以/结尾
@@ -152,11 +151,25 @@ public class PackageTools {
             archiveFile(file);
     }
 
+    private boolean isIgnores(String file) {
+        if (rs.getIgnoreList() == null)
+            return false;
+
+        for (String ign : rs.getIgnoreList()) {
+            if (file.matches(ign)) {
+                log("\t匹配规则: " + ign + ",跳过文件 " + file);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 
     public void archiveFile(String file) throws IOException {
         //copy file to packageroot from distroot
         //拷贝文件
-        FileUtils.copyFile(new File(rs.getWorkspacePath() + file), new File(rs.getJobPath() + "package/" + file));
+        FileUtils.copyFile(new File(rs.getWorkspacePath() + rs.getWebRoot() + "/" + file), new File(rs.getJobPath() + "package/" + file));
         log("拷贝文件\t" + rs.getJobPath() + "package/" + file);
         archiveAnonymousFile(file);
     }
@@ -173,7 +186,7 @@ public class PackageTools {
 
         String fileDir = file.substring(0, file.lastIndexOf(File.separator) + 1);
         String fileName = file.substring(file.lastIndexOf(File.separator) + 1, file.length() - 6);
-        Collection<File> files = FileUtils.listFiles(new File(rs.getWorkspacePath() + fileDir), new SurfixNameFileFilter(fileName + "$"), null);
+        Collection<File> files = FileUtils.listFiles(new File(rs.getWorkspacePath() + rs.getWebRoot() + "/" + fileDir), new SurfixNameFileFilter(fileName + "$"), null);
 
         for (File f : files) {
             FileUtils.copyFile(f, new File(rs.getJobPath() + "package/" + fileDir + f.getName()));
@@ -213,6 +226,7 @@ public class PackageTools {
         //删除package临时目录
         FileUtils.deleteDirectory(new File(rs.getJobPath() + "package/"));
 
+
     }
 
     /**
@@ -223,9 +237,12 @@ public class PackageTools {
      */
     private String fileNameConvert(String file) {
         String retFile = file;
+        retFile = retFile.replaceAll(".java", ".class");
+        retFile = retFile.replaceAll(rs.getSrcRoot(), "/WEB-INF/classes");
+        retFile = retFile.replaceAll(rs.getWebRoot(), "");
 
         if (rs.getRegexList() == null || rs.getRegexList().length == 0)
-            return file;
+            return retFile;
 
         if (rs.getReplaceList() == null || rs.getReplaceList().length == 0) {
             log("WARN\t查找表达式和替换内容不匹配，程序终止");
@@ -235,10 +252,81 @@ public class PackageTools {
             retFile = retFile.replaceAll(rs.getRegexList()[i], rs.getReplaceList()[i]);
         }
 
+
         return retFile;
     }
 
     protected void log(String s) {
         rs.getLog().println("\t" + s);
+    }
+
+    public List<ChangeFile> getChangeList() throws IOException {
+        File packageNumberFile = new File(rs.getWorkspacePath() + "packageNumber");
+        int startBuildNumber = rs.getBuildNumber();
+        if (!packageNumberFile.exists()) {
+            log("未找到最后一次成功打包的构建编号，只打包本次构建");
+        } else {
+            FileInputStream fin = new FileInputStream(packageNumberFile);
+            List<String> tmp = IOUtils.readLines(fin, "utf-8");
+
+            String txt = tmp.get(0);
+            startBuildNumber = Integer.parseInt(txt);
+        }
+        List<ChangeFile> changeList = new ArrayList<>();
+        for (; startBuildNumber <= rs.getBuildNumber(); startBuildNumber++) {
+            //jenkinsHome + "jobs/" + jobName + "/builds/" + buildNumber + "/";
+            String changeFilePath = rs.getJenkinsHome() + "jobs/" + rs.getJobName() + "/builds/" + startBuildNumber + "/changelog.xml";
+            File changeFile = new File(changeFilePath);
+            log("读取 " + changeFilePath);
+
+            Document doc = null;
+            try {
+                doc = new SAXReader().read(new File(changeFilePath));
+            } catch (DocumentException e) {
+                log("\t读取changelog.xml出错");
+                throw new IOException("读取changelog.xml出错");
+            }
+
+            //读取changelist
+            List<Node> nodes = doc.selectNodes("//path");
+            if (nodes == null || nodes.isEmpty()) {
+                log("\t无需要打包的文件");
+            }
+            for (Node n : nodes) {
+                Element e = (Element) n;
+                String action = e.attribute("action").getValue();
+                String file = e.attribute("localPath").getValue();
+                String kind = e.attribute("kind").getValue();
+                ChangeFile f = new ChangeFile(file, kind, action);
+                changeList.add(f);
+                log("\t" + f.toString());
+            }
+
+        }
+        return changeList;
+    }
+
+    public void writeSuccessedPackageNumber() throws IOException {
+        log("写入 " + rs.getBuildNumber() + " 至 " + rs.getWorkspacePath() + "packageNumber");
+        File packageNumberFile = new File(rs.getWorkspacePath() + "packageNumber");
+        if (!packageNumberFile.exists()) {
+            packageNumberFile.createNewFile();
+        }
+        try (FileOutputStream fout = new FileOutputStream(packageNumberFile, false)) {
+            IOUtils.write(String.valueOf(rs.getBuildNumber()), fout, "utf-8");
+        }
+    }
+
+    public void writeFailurePackageNumber() throws IOException {
+//        File packageNumberFile = new File(rs.getWorkspacePath() + "packageNumber");
+//        if (!packageNumberFile.exists()) {
+//            packageNumberFile.createNewFile();
+//            try (FileOutputStream fout = new FileOutputStream(packageNumberFile, false)) {
+//                log("打包失败，下次从" + (rs.getBuildNumber() - 1) + "开始打包 ");
+//                IOUtils.write(String.valueOf(rs.getBuildNumber() - 1), fout, "utf-8");
+//            }
+//        } else {
+//            log("打包失败，不递增" + rs.getBuildNumber() + " 至 " + rs.getWorkspacePath() + "packageNumber");
+//        }
     }
 }

@@ -3,6 +3,8 @@ package pub.timelyrain.jenkins.plugin.increment;
 import java.io.PrintStream;
 
 public class RuntimeSetting {
+    private String jenkinsHome;
+    private String srcRoot, webRoot;
     private String jobPath, workspacePath;
     private String bkRoot, prodRoot, packageRoot;
     private String[] regexList = null, replaceList = null;//changelog匹配表达式列表，替换值列表
@@ -12,7 +14,10 @@ public class RuntimeSetting {
     private PrintStream log;
     private String shType;
 
-    public RuntimeSetting(String bkRoot, String prodRoot, String packageRoot, String shType, String[] regexList, String[] replaceList, String[] ignoreList, String jenkinsHome, int buildNumber, String jobName, PrintStream log) {
+    public RuntimeSetting(String srcRoot, String webRoot, String bkRoot, String prodRoot, String packageRoot, String shType, String[] regexList, String[] replaceList, String[] ignoreList, String jenkinsHome, int buildNumber, String jobName, PrintStream log) {
+        this.jenkinsHome = jenkinsHome;
+        this.srcRoot = srcRoot;
+        this.webRoot = webRoot;
         this.bkRoot = bkRoot;
         this.prodRoot = prodRoot;
         this.packageRoot = packageRoot;
@@ -25,7 +30,7 @@ public class RuntimeSetting {
         this.buildNumber = buildNumber;
         this.jobName = jobName;
         this.log = log;
-        if(!jenkinsHome.endsWith("/") && !jenkinsHome.endsWith("\\"))
+        if (!jenkinsHome.endsWith("/") && !jenkinsHome.endsWith("\\"))
             jenkinsHome += "/";
 
         if (!bkRoot.endsWith("/") && !bkRoot.endsWith("\\"))
@@ -46,6 +51,30 @@ public class RuntimeSetting {
         log.println("");
         log.println("打包文件保存目录\t" + this.jobPath);
         log.println("编译输出目录\t" + this.workspacePath);
+    }
+
+    public String getJenkinsHome() {
+        return jenkinsHome;
+    }
+
+    public void setJenkinsHome(String jenkinsHome) {
+        this.jenkinsHome = jenkinsHome;
+    }
+
+    public String getSrcRoot() {
+        return srcRoot;
+    }
+
+    public void setSrcRoot(String srcRoot) {
+        this.srcRoot = srcRoot;
+    }
+
+    public String getWebRoot() {
+        return webRoot;
+    }
+
+    public void setWebRoot(String webRoot) {
+        this.webRoot = webRoot;
     }
 
     public String getJobPath() {

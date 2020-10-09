@@ -1,14 +1,14 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-<!--
-    <f:entry title="源代码路径" field="srcPath" description="以代码检出目录为根目录，src/com/ciic/xx则设置为src">
+
+    <f:entry title="Workspace下的源码路径" field="srcRoot" description="以代码检出目录为根目录，/src/com/ciic/xx则设置为src">
         <f:textbox/>
     </f:entry>
 
-    <f:entry title="编译输出路径" field="compileTo" description="编译输出路径，以代码检出目录为根目录，如webroot\WEB-INF\classes\xxx则设置为webroot\WEB-INF\classes">
+    <f:entry title="Workspace下站点路径" field="webRoot" description="以代码检出目录为根目录，WEB-INF的上级地址，如/WebRoot/WEB-INF/ 则设置为WebRoot">
         <f:textbox/>
     </f:entry>
--->
+
     <f:entry title="应用服务器上程序备份路径" field="bkRoot" description="用于在部署前保存备份文件。">
         <f:textbox/>
     </f:entry>
