@@ -42,9 +42,9 @@ public class Cmd {
     public String cp(String file, String src, String dst) {
         String sh = null;
         if (isWin)
-            sh = "xcopy /y \"%s\" \"%s\" ";
+            sh = "xcopy /y %s %s ";
         else
-            sh = "cp /f \"%s\" \"%s\" ";
+            sh = "cp /f %s %s ";
 
         return String.format(sh, pathConvert(src + "/" + multiFile(file)), pathConvert(dst + "/" + dstPath(file)));
         //String param = src + "/" + multiFile(file) + " " + dst + "/" + dstPath(file);
@@ -54,9 +54,9 @@ public class Cmd {
     public String cpdir(String path, String src, String dst) {
         String sh = null;
         if (isWin)
-            sh = "xcopy /f /e \"%s\" \"%s\"";
+            sh = "xcopy /f /e %s %s";
         else
-            sh = "cp -r \"%s\" \"%s\"";
+            sh = "cp -r %s %s";
 
         return String.format(sh, pathConvert(src + "/" + multiFile(path)), pathConvert(dst + "/" + dstPath(path)));
 //        String param = src + "/" + path + " " + dst + "/" + path;
@@ -69,9 +69,9 @@ public class Cmd {
 
         String sh = null;
         if (isWin)
-            sh = "mkdir \"%s\"";
+            sh = "mkdir %s";
         else
-            sh = "mkdir -p \"%s\"";
+            sh = "mkdir -p %s";
         return String.format(sh, pathConvert(dst + "/" + dstPath(path)));
 //        String param = dst + "/" + path;
 //        return sh + pathConvert(param);
@@ -80,9 +80,9 @@ public class Cmd {
     public String rm(String file, String src, String dst) {
         String sh = null;
         if (isWin)
-            sh = "del \"%s\"";
+            sh = "del %s";
         else
-            sh = "rm \"%s\"";
+            sh = "rm %s";
         return String.format(sh, pathConvert(dst + "/" + dstPath(file)));
 //        String param = dst + "/" + file;
 //        return sh + pathConvert(param);
@@ -91,9 +91,9 @@ public class Cmd {
     public String rmdir(String path, String src, String dst) {
         String sh = null;
         if (isWin)
-            sh = "rd /s /q \"%s\"";
+            sh = "rd /s /q %s";
         else
-            sh = "rm -rf \"%s\"";
+            sh = "rm -rf %s";
         return String.format(sh, pathConvert(dst + "/" + dstPath(path)));
 //        String param = dst + "/" + path;
 //        return sh + pathConvert(param);
@@ -136,6 +136,8 @@ public class Cmd {
     }
 
     private String multiFile(String file) {
+        //添加双引号 ，避免文件名或路径有空格
+        file = "\"" + file + "\"";
         int idx = file.lastIndexOf(".");
         if (idx == -1)
             return file;
@@ -143,6 +145,7 @@ public class Cmd {
     }
 
     private String dstPath(String file) {
+        file = "\"" + file + "\"";
         int idx = file.lastIndexOf(File.separator);
         if (idx == -1)
             return "";
