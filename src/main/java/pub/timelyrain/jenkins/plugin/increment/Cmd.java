@@ -150,6 +150,6 @@ public class Cmd {
         if (idx == -1)
             return "";
         else
-            return file.substring(0, idx) + "/";
+            return "\""+ file.substring(0, idx) + "/"+ "\"";
     }
 }
