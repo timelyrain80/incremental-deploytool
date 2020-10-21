@@ -137,7 +137,7 @@ public class Cmd {
 
     private String multiFile(String file) {
         //添加双引号 ，避免文件名或路径有空格
-        file = "\"" + file + "\"";
+        file = "\"" + file.trim() + "\"";
         int idx = file.lastIndexOf(".");
         if (idx == -1)
             return file;
@@ -145,7 +145,6 @@ public class Cmd {
     }
 
     private String dstPath(String file) {
-        file = "\"" + file + "\"";
         int idx = file.lastIndexOf(File.separator);
         if (idx == -1)
             return "";
