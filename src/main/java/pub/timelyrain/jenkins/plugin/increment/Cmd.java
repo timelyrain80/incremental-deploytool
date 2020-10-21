@@ -24,9 +24,9 @@ public class Cmd {
     public String setVar(String var, String value) {
         String sh = null;
         if (isWin)
-            sh = "set " + var + "=" + pathConvert(value);
+            sh = "set " + var + "=\"" + pathConvert(value) + "\"";
         else
-            sh = "export " + var + "=" + pathConvert(value);
+            sh = "export " + var + "=\"" + pathConvert(value) + "\"";
         return sh;
     }
 
@@ -42,23 +42,25 @@ public class Cmd {
     public String cp(String file, String src, String dst) {
         String sh = null;
         if (isWin)
-            sh = "xcopy /y ";
+            sh = "xcopy /y \"%s\" \"%s\" ";
         else
-            sh = "cp /f ";
+            sh = "cp /f \"%s\" \"%s\" ";
 
-        String param = src + "/" + multiFile(file) + " " + dst + "/" + dstPath(file);
-        return sh + pathConvert(param);
+        return String.format(sh, pathConvert(src + "/" + multiFile(file)), pathConvert(dst + "/" + dstPath(file)));
+        //String param = src + "/" + multiFile(file) + " " + dst + "/" + dstPath(file);
+        //return sh + pathConvert(param);
     }
 
     public String cpdir(String path, String src, String dst) {
         String sh = null;
         if (isWin)
-            sh = "xcopy /f /e ";
+            sh = "xcopy /f /e \"%s\" \"%s\"";
         else
-            sh = "cp -r ";
+            sh = "cp -r \"%s\" \"%s\"";
 
-        String param = src + "/" + path + " " + dst + "/" + path;
-        return sh + pathConvert(param);
+        return String.format(sh, pathConvert(src + "/" + multiFile(path)), pathConvert(dst + "/" + dstPath(path)));
+//        String param = src + "/" + path + " " + dst + "/" + path;
+//        return sh + pathConvert(param);
     }
 
     public String mkdir(String path, String src, String dst) {
@@ -67,31 +69,34 @@ public class Cmd {
 
         String sh = null;
         if (isWin)
-            sh = "mkdir ";
+            sh = "mkdir \"%s\"";
         else
-            sh = "mkdir -p ";
-        String param = dst + "/" + path;
-        return sh + pathConvert(param);
+            sh = "mkdir -p \"%s\"";
+        return String.format(sh, pathConvert(dst + "/" + dstPath(path)));
+//        String param = dst + "/" + path;
+//        return sh + pathConvert(param);
     }
 
     public String rm(String file, String src, String dst) {
         String sh = null;
         if (isWin)
-            sh = "del ";
+            sh = "del \"%s\"";
         else
-            sh = "rm ";
-        String param = dst + "/" + file;
-        return sh + pathConvert(param);
+            sh = "rm \"%s\"";
+        return String.format(sh, pathConvert(dst + "/" + dstPath(file)));
+//        String param = dst + "/" + file;
+//        return sh + pathConvert(param);
     }
 
     public String rmdir(String path, String src, String dst) {
         String sh = null;
         if (isWin)
-            sh = "rd /s /q ";
+            sh = "rd /s /q \"%s\"";
         else
-            sh = "rm -rf ";
-        String param = dst + "/" + path;
-        return sh + pathConvert(param);
+            sh = "rm -rf \"%s\"";
+        return String.format(sh, pathConvert(dst + "/" + dstPath(path)));
+//        String param = dst + "/" + path;
+//        return sh + pathConvert(param);
     }
 
     public String pathConvert(String path) {
@@ -132,12 +137,14 @@ public class Cmd {
 
     private String multiFile(String file) {
         int idx = file.lastIndexOf(".");
+        if (idx == -1)
+            return file;
         return file.substring(0, idx) + "*" + file.substring(idx, file.length());
     }
 
     private String dstPath(String file) {
         int idx = file.lastIndexOf(File.separator);
-        if(idx == -1)
+        if (idx == -1)
             return "";
         else
             return file.substring(0, idx) + "/";

@@ -122,7 +122,7 @@ public class PackageTools {
             dpList.add(cmd.rmdir(file, null, cmd.getVar("PROD_ROOT")));
             rbList.add(0, cmd.cpdir(file, cmd.getVar("BK_ROOT"), cmd.getVar("PROD_ROOT")));
 
-            archiveFile(file);
+            //archiveFile(file);
         } else if ("dir".equalsIgnoreCase(kind) && "M".equalsIgnoreCase(action)) {
             bkList.add("");
             dpList.add("");
@@ -277,6 +277,11 @@ public class PackageTools {
             //jenkinsHome + "jobs/" + jobName + "/builds/" + buildNumber + "/";
             String changeFilePath = rs.getJenkinsHome() + "jobs/" + rs.getJobName() + "/builds/" + startBuildNumber + "/changelog.xml";
             File changeFile = new File(changeFilePath);
+
+            if (!changeFile.exists()) {
+                log(changeFilePath + "\t不存在，跳过 ");
+                continue;
+            }
             log("读取 " + changeFilePath);
 
             Document doc = null;
