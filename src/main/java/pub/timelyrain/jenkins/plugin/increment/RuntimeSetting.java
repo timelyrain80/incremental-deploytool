@@ -13,8 +13,9 @@ public class RuntimeSetting {
     private String jobName;
     private PrintStream log;
     private String shType;
+    private int startBuilderNumber; //开始打包的构建编号
 
-    public RuntimeSetting(String srcRoot, String webRoot, String bkRoot, String prodRoot, String packageRoot, String shType, String[] regexList, String[] replaceList, String[] ignoreList, String jenkinsHome, int buildNumber, String jobName, PrintStream log) {
+    public RuntimeSetting(String srcRoot, String webRoot, String bkRoot, String prodRoot, String packageRoot, String shType, String[] regexList, String[] replaceList, String[] ignoreList, String jenkinsHome, int buildNumber, String jobName, PrintStream log,int startBuilderNumber) {
         this.jenkinsHome = jenkinsHome;
         this.srcRoot = srcRoot;
         this.webRoot = webRoot;
@@ -28,6 +29,8 @@ public class RuntimeSetting {
         this.ignoreList = ignoreList;
 
         this.buildNumber = buildNumber;
+        this.startBuilderNumber = startBuilderNumber;
+
         this.jobName = jobName;
         this.log = log;
         if (!jenkinsHome.endsWith("/") && !jenkinsHome.endsWith("\\"))
@@ -123,5 +126,13 @@ public class RuntimeSetting {
 
     public String getShType() {
         return shType;
+    }
+
+    public int getStartBuilderNumber() {
+        return startBuilderNumber;
+    }
+
+    public void setStartBuilderNumber(int startBuilderNumber) {
+        this.startBuilderNumber = startBuilderNumber;
     }
 }

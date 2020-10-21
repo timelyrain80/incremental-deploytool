@@ -261,17 +261,8 @@ public class PackageTools {
     }
 
     public List<ChangeFile> getChangeList() throws IOException {
-        File packageNumberFile = new File(rs.getWorkspacePath() + "packageNumber");
-        int startBuildNumber = rs.getBuildNumber();
-        if (!packageNumberFile.exists()) {
-            log("未找到最后一次成功打包的构建编号，只打包本次构建");
-        } else {
-            FileInputStream fin = new FileInputStream(packageNumberFile);
-            List<String> tmp = IOUtils.readLines(fin, "utf-8");
+        int startBuildNumber = rs.getStartBuilderNumber();
 
-            String txt = tmp.get(0);
-            startBuildNumber = Integer.parseInt(txt);
-        }
         List<ChangeFile> changeList = new ArrayList<>();
         for (; startBuildNumber <= rs.getBuildNumber(); startBuildNumber++) {
             //jenkinsHome + "jobs/" + jobName + "/builds/" + buildNumber + "/";
@@ -312,14 +303,7 @@ public class PackageTools {
     }
 
     public void writeSuccessedPackageNumber() throws IOException {
-        log("写入 " + rs.getBuildNumber() + " 至 " + rs.getWorkspacePath() + "packageNumber");
-        File packageNumberFile = new File(rs.getWorkspacePath() + "packageNumber");
-        if (!packageNumberFile.exists()) {
-            packageNumberFile.createNewFile();
-        }
-        try (FileOutputStream fout = new FileOutputStream(packageNumberFile, false)) {
-            IOUtils.write(String.valueOf(rs.getBuildNumber()), fout, "utf-8");
-        }
+        rs.setStartBuilderNumber(rs.getBuildNumber());
     }
 
     public void writeFailurePackageNumber() throws IOException {

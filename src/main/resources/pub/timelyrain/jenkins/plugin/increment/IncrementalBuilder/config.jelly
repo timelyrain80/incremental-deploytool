@@ -18,6 +18,9 @@
     <f:entry title="应用服务器上增量包解压路径" field="packageRoot" description="增量包上传服务器后的解压路径">
         <f:textbox/>
     </f:entry>
+    <f:entry title="开始打包的构建编号" field="startBuilderNumber" description="开始打包的构建编号">
+        <f:textbox/>
+    </f:entry>
 
     <f:entry title="脚本文件格式" field="shType">
         <select name="shType">

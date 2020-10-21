@@ -34,6 +34,8 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
     private String shType;//脚本文件格式
     private String regexStrs, replaceStrs, ignoreStrs;
 
+    private int startBuilderNumber;
+
     private String[] regexList = null, replaceList = null;//changelog匹配表达式列表，替换值列表
     private String[] ignoreList = null; //忽略的文件列表 。比如生产环境的配置文件。
     private int buildNumber;
@@ -42,7 +44,7 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
 
 
     @DataBoundConstructor
-    public IncrementalBuilder(String srcRoot, String webRoot, String bkRoot, String prodRoot, String packageRoot, String shType, String regexStrs, String replaceStrs, String ignoreStrs) {
+    public IncrementalBuilder(String srcRoot, String webRoot, String bkRoot, String prodRoot, String packageRoot, String shType, String regexStrs, String replaceStrs, String ignoreStrs, int startBuilderNumber) {
         this.srcRoot = srcRoot;
         this.webRoot = webRoot;
 
@@ -51,6 +53,7 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
         this.packageRoot = packageRoot;
         this.shType = shType;
 
+        this.startBuilderNumber = startBuilderNumber;
 
         this.regexStrs = regexStrs;
         this.replaceStrs = replaceStrs;
@@ -85,9 +88,12 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
         LOG.println("");
 
         //调用打包程序
-        RuntimeSetting rs = new RuntimeSetting(srcRoot, webRoot, bkRoot, prodRoot, packageRoot, shType, regexList, replaceList, ignoreList, homePath, buildNumber, jobName, listener.getLogger());
+        RuntimeSetting rs = new RuntimeSetting(srcRoot, webRoot, bkRoot, prodRoot, packageRoot, shType, regexList, replaceList, ignoreList, homePath, buildNumber, jobName, listener.getLogger(), this.startBuilderNumber);
         PackageTools pk = new PackageTools(rs);
         pk.makePackage();
+
+        //更新下次构建的起始编号
+        this.startBuilderNumber = rs.getStartBuilderNumber();
 
         LOG.println("插件执行完毕");
     }
@@ -289,5 +295,12 @@ public class IncrementalBuilder extends Builder implements SimpleBuildStep {
         this.ignoreStrs = ignoreStrs;
     }
 
+    public int getStartBuilderNumber() {
+        return startBuilderNumber;
+    }
 
+    @DataBoundSetter
+    public void setStartBuilderNumber(int startBuilderNumber) {
+        this.startBuilderNumber = startBuilderNumber;
+    }
 }
